@@ -4,8 +4,12 @@ import socket
 import psutil
 import json
 import time
+import sys
 
-ip = socket.gethostbyname(socket.gethostname())
+if len(sys.argv) > 1:
+    ip = sys.argv[1]
+else:
+    ip = socket.gethostbyname(socket.gethostname())
 
 #subscriptions
 request_system_topic = "pi4broker/request_system"

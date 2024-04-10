@@ -201,7 +201,7 @@ def store_op_result(result_payload):
 
 	operation_history[len(program_history) - 1]["operations"][result_payload["operation_id"]] = operation
 
-	print("Operation " +  str(result_payload["operation_id"]) + " completed successfully and returned : " + str(result_payload["result"]))
+	print("Operation " +  str(result_payload["operation_id"]) + " completed successfully on worker " + str(operation["worker_ip"]) + " and returned : " + str(result_payload["result"]))
 
 #Scheduler algorithm
 #Filter all worker that are already busy
@@ -311,14 +311,16 @@ mqttc.connect("broker.emqx.io", 1883, 60)
 
 test_time_start = time.time()
 
+print("====================")
+print("Test with Numpy dot() function : ")
 random_matrix_a = np.random.randint(9, size = (10 , 10))
 random_matrix_b = np.random.randint(9, size = (10 ,10))
 print(random_matrix_a.dot(random_matrix_b))
 test_time_end = time.time()
-print(test_time_end - test_time_start)
+print("Elapsed time: " + str(round(test_time_end - test_time_start, 3)) + "s")
 random_matrix_a = random_matrix_a.tolist()
 random_matrix_b = random_matrix_b.tolist()
-
+print("====================")
 
 
 input_data = {"a": random_matrix_a, "b": random_matrix_b}
@@ -346,7 +348,6 @@ mqttc.loop_stop()
 
 
 #TODO algo ordonancement
-#TODO algo multiplication matriciel
-#TODO creation dataset
 #TODO check timeout + rescheduling
 #TODO grafana
+#TODO rappport
