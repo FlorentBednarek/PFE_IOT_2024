@@ -306,7 +306,7 @@ mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 mqttc.on_disconnect = on_disconnect
 
-mqttc.connect("broker.emqx.io", 1883, 60)
+mqttc.connect("10.10.4.160", 18883, 60)
 
 
 test_time_start = time.time()
