@@ -31,7 +31,14 @@ task_list = [
 	{
 		"id": 1,
 		"name": "mult_1d_a_b",
-		"task": "for i in range(len(data['a'])): r += data['a'][i]*data['b'][i]"
+		"task": """
+r = []
+for i in range(len(static_data[0])):
+	tot = 0
+	for j in range(len(data['a'])):
+		tot += data['a'][j]*static_data[j][i]
+	r.append(tot)
+		"""
 	}
 ]
 
@@ -57,18 +64,24 @@ program_sum = {
 }
 programs.append(program_sum)
 
+
 #Program that compute the matricial multiplication of 2 arbitrary large matrix (complexity: O(n^3))
+def matmult_start(input_data):
+	mat_b = input_data["b"]
+	
+	send_static_data_payload = {}
+	send_static_data_payload["data"] = mat_b
+
+	mqttc.publish(send_static_data_topic, payload=json.dumps(send_static_data_payload), qos=0, retain=False)
+
 def matmult(input_data):
 	mat_a = input_data["a"]
-	mat_b = np.transpose(np.array(input_data["b"])).tolist()
 
 	for line_a in mat_a:
-		for line_b in mat_b:
-			operation_data = {
-				"a": line_a,
-				"b": line_b
-			}
-			queue_operation(1, operation_data)
+		operation_data = {
+			"a": line_a,
+		}
+		queue_operation(1, operation_data)
 
 def matmult_compute_final_result(input_data):
 	n = len(input_data["a"])
@@ -76,16 +89,13 @@ def matmult_compute_final_result(input_data):
 	operations = operation_history[len(program_history) - 1]["operations"]
 
 	for op in operations:
-		k = op["operation_id"]
-		i = math.floor(k / n)
-		j = k % n
-		result[i][j] = op["result"]
+		result[op["operation_id"]] = op["result"]
 	end_program(result)
 
 program_matmult = {
 	"id" : 1,
 	"name": "matrix multiplication",
-	"program_blocks": [matmult, matmult_compute_final_result],
+	"program_blocks": [matmult_start, matmult, matmult_compute_final_result],
 	"next_block": 0
 }
 programs.append(program_matmult)
@@ -128,6 +138,7 @@ operation_result_topic = "pi4broker/operation_result"
 
 #Publisher
 request_system_topic = "pi4broker/request_system"
+send_static_data_topic = "pi4broker/send_static_data"
 
 
 #dict of current Workers (dynamically updated whenever a worker is connected to the broker)
@@ -201,7 +212,7 @@ def store_op_result(result_payload):
 
 	operation_history[len(program_history) - 1]["operations"][result_payload["operation_id"]] = operation
 
-	print("Operation " +  str(result_payload["operation_id"]) + " completed successfully on worker " + str(operation["worker_ip"]) + " and returned : " + str(result_payload["result"]))
+	print("Operation " +  str(result_payload["operation_id"]) + " completed successfully on worker " + str(operation["worker_ip"]))
 
 #Scheduler algorithm
 #Filter all worker that are already busy
@@ -313,8 +324,8 @@ test_time_start = time.time()
 
 print("====================")
 print("Test with Numpy dot() function : ")
-random_matrix_a = np.random.randint(9, size = (10 , 10))
-random_matrix_b = np.random.randint(9, size = (10 ,10))
+random_matrix_a = np.random.randint(9, size = (1000 , 1000))
+random_matrix_b = np.random.randint(9, size = (1000 ,1000))
 print(random_matrix_a.dot(random_matrix_b))
 test_time_end = time.time()
 print("Elapsed time: " + str(round(test_time_end - test_time_start, 3)) + "s")

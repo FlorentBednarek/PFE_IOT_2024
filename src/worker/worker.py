@@ -6,6 +6,10 @@ import json
 import time
 import sys
 
+
+static_data = []
+
+
 if len(sys.argv) > 1:
     ip = sys.argv[1]
 else:
@@ -15,6 +19,8 @@ else:
 request_system_topic = "pi4broker/request_system"
 operation_request_topic = "pi4broker/request_operation_" + ip 
 set_task_topic = "pi4broker/set_task_" + ip
+send_static_data_topic = "pi4broker/send_static_data"
+
 
 
 #publisher
@@ -61,6 +67,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
     client.subscribe(request_system_topic)
     client.subscribe(set_task_topic)
     client.subscribe(operation_request_topic)
+    client.subscribe(send_static_data_topic)
 
     send_system_infos_to_brocker()
 
@@ -77,6 +84,9 @@ def on_message(client, userdata, msg):
         print("Task '" + payload["name"] + "' loaded!")
     if msg.topic == operation_request_topic:
         start_new_operation(payload)
+    if msg.topic == send_static_data_topic:
+        global static_data
+        static_data = payload["data"] 
 
 mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 mqttc.on_connect = on_connect
